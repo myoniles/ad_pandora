@@ -26,8 +26,7 @@ class Offer:
 		self.est_offer_val = self.bid * self.est_rate
 
 	def adjusted_probability_estimate(self, c):
-		debug = self.est_rate*(1-self.est_rate)/self.n
-		std_est = math.sqrt(debug)
+		std_est = math.sqrt(self.est_rate*(1-self.est_rate)/self.n)
 		return self.est_rate - c * std_est
 
 	def get_offer_type(self):
