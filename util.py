@@ -1,5 +1,5 @@
 import random
-import numpy
+import numpy as np
 
 def second_price( products ):
 	# finds the winning selection for a second price auction based on the product of bid and estimated respsonse rate

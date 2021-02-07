@@ -18,12 +18,17 @@ class Offer:
 			self.act_rate = 1.0 #CPM
 
 		self.n = random.choice(N_VALS)
-		self.est_rate = np.random.binomial(self.n, act_rate)
-		act_val = np.random.normal(loc=1, scale=0.1)
-		self.bid = act_val / self.act_rate
+		self.est_rate = np.random.binomial(self.n, self.act_rate) / self.n
+		self.act_val = np.random.normal(loc=1, scale=0.1)
+		self.bid = self.act_val / self.act_rate
+
+		self.act_offer_val = self.bid * self.act_rate
+		self.est_offer_val = self.bid * self.est_rate
 
 	def adjusted_probability_estimate(self, c):
-		std_est = math.sqrt(self.est_rate(1-est_rate)/n)
+		debug = self.est_rate*(1-self.est_rate)/self.n
+		std_est = math.sqrt(debug)
 		return self.est_rate - c * std_est
 
-
+	def get_offer_type(self):
+		return OFFER_TYPES[self.offer_type]
