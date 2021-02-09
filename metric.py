@@ -18,6 +18,7 @@ class Metric(metaclass=abc.ABCMeta):
 
 	def graph(self):
 		self.df = pd.DataFrame(self.acc)
+		self.df /= self.fidelity
 		x_axis = np.linspace(0, 3, self.fidelity)
 		for col in self.df:
 			plt.plot(x_axis,self.df[col], label=col)

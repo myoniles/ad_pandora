@@ -8,15 +8,6 @@ from tqdm import tqdm
 
 FID = 1000
 
-def generate_graph(df):
-	x_axis = np.linspace(0,3,FID)
-	for col in df:
-		plt.plot(x_axis,df[col], label=col)
-	plt.legend(loc=1,ncol=2)
-	plt.xlabel("Penalty Coefficient-c")
-	plt.ylabel("Revenue Impact")
-	plt.show()
-
 def test_metrics(offers, metrics, c_min=0, c_max=3, c_fid=3000):
 	for m in metrics:
 		for c_in, c in enumerate(np.linspace(c_min, c_max, c_fid)):
@@ -32,10 +23,7 @@ if __name__ == '__main__':
 		auc = generate_auctions(i, FID)
 		for a_in, a in enumerate(auc):
 			test_metrics(a, metrics, c_fid=FID)
-			print ('num offers:', i, 'auction_num:', a_in, end='\r')
+			print ( ' '*35, end='\r')
+			print ('num offers:', i, 'auction_num:', a_in+1, end='\r')
 	for m in metrics:
 		m.graph()
-	#		acc[str(i)] += test_metric(a, util.revenue_impact, c_fid=FID)
-	#	acc[str(i)] /= FID
-	#df = pd.DataFrame(acc)
-	#generate_graph(df)
