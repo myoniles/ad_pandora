@@ -31,3 +31,26 @@ def revenue_impact(est_rates, act_rates, bids):
 	r_star = maximal_expected_revenue(act_rates, bids)
 	r = expected_revenue(est_rates, bids, act_rates)
 	return (r_star - r) / r_star
+
+def offers_split(offers, c):
+	l = [(o.bid, o.act_rate, o.adjusted_probability_estimate(c)) for o in offers]
+	return map(list, zip(*l))
+
+def revenue_impact_metric(offers, c):
+	l = [(o.bid, o.act_rate) for o in offers]
+	bids, act_rates = map(list, zip(*l))
+	adj_est_rates = [o.adjusted_probability_estimate(c) for o in offers]
+	return revenue_impact(adj_est_rates, act_rates, bids)
+
+def selectivity(offers, c):
+	l = [(o.bid, o.act_rate) for o in offers]
+	bids, act_rates = map(list, zip(*l))
+	adj_est_rates = [o.adjusted_probability_estimate(c) for o in offers]
+	pb_est = np.multiply(est_rates, bids)
+	w_est, s_est = second_price(pb)
+	pb_act = np.multiply(act_rates, bids)
+	w_act, s_est = second_price(pb)
+	if w_est == w_act:
+		return 1
+	else:
+		return 0
