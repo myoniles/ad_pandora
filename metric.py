@@ -17,6 +17,7 @@ class Metric(metaclass=abc.ABCMeta):
 		pass
 
 	def graph(self):
+		self.df = pd.DataFrame(self.acc)
 		x_axis = np.linspace(0, 3, self.fidelity)
 		for col in self.df:
 			plt.plot(x_axis,self.df[col], label=col)
@@ -44,22 +45,21 @@ class Revenue_Impact(Metric):
 			self.acc[len(offers)][c_in] += measure
 		return measure
 
-	def graph(self):
-		self.df = pd.DataFrame(self.acc)
-		super().graph()
-
 
 class Selectivity(Metric):
 	def __init__(self, fidelity):
-		super().__init__('Selectivty', fidelity)
+		super().__init__('Selectivity', fidelity)
 
-	def test(self, offers, c, update=True):
-		bids, act_rates, est_rates = split_offers(c)
+	def test(self, offers, c, update=True, c_in=0):
+		if len(offers) not in self.acc: # first with n offers
+			self.acc[len(offers)] = np.zeros(self.fidelity)
+
+		bids, act_rates, est_rates = util.offers_split(offers, c)
 		pb_est = np.multiply(est_rates, bids)
-		w_est, s_est = second_price(pb)
+		w_est, s_est = util.second_price(pb_est)
 		pb_act = np.multiply(act_rates, bids)
-		w_act, s_act = second_price(pb)
-		if w_est == w_act:
-			return 1
-		else:
-			return 0
+		w_act, s_act = util.second_price(pb_act)
+		measure = int(w_est == w_act)
+		if update:
+			self.acc[len(offers)][c_in] += measure
+		return measure
