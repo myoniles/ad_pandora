@@ -7,9 +7,12 @@ import matplotlib.pyplot as plt
 FID = 1000
 
 def generate_graph(df):
+	x_axis = np.linspace(0,3,FID)
 	for col in df:
-		plt.plot(df[col], label=col)
-	plt.legend(loc=2,ncol=2)
+		plt.plot(x_axis,df[col], label=col)
+	plt.legend(loc=1,ncol=2)
+	plt.xlabel("Penalty Coefficient-c")
+	plt.ylabel("Revenue Impact")
 	plt.show()
 
 def test_metric(offers, metric, c_min=0, c_max=3, c_fid=3000):
