@@ -21,9 +21,7 @@ if __name__ == '__main__':
 	acc = {}
 	for i in range(4, 41, 4):
 		auc = generate_auctions(i, FID)
-		for a_in, a in enumerate(auc):
+		for a in tqdm(auc, desc="{} offer auctions".format(i)):
 			test_metrics(a, metrics, c_fid=FID)
-			print ( ' '*35, end='\r')
-			print ('num offers:', i, 'auction_num:', a_in+1, end='\r')
 	for m in metrics:
 		m.graph()
