@@ -3,6 +3,7 @@ import random
 import statistics
 import abc
 import math
+from scipy import stats
 
 UNIFORM_MIN_A = 0
 UNIFORM_MAX_A = 10
@@ -78,7 +79,6 @@ class Uniform_Dist(Dist):
 	def variance(self):
 		return self.var
 
-
 DEFAULT_PHASE_1_MEAN = Normal_Dist(loc=10, std=2)
 DEFAULT_PHASE_1_STD = Uniform_Dist(ab_pair=(0,3))
 
@@ -102,6 +102,36 @@ class Gamma_Dist(Dist):
 
 	def variance(self):
 		return self.k * self.theta**2
+
+class HighTail_RandVar(stats.rv_continuous):
+	def __init__(self, xm, alpha=5, xtol=1e-14, seed=None):
+			self.xm = xm
+			# If we want to keep variance 9 or below, we have to keep it greater than 3.18
+			# I find this delightful since it is so close to pi
+			self.alpha = 7.2 + DEFAULT_PHASE_1_STD.generate_val()
+			super().__init__(a=0, xtol=xtol, seed=seed)
+
+	def _cdf(self, x):
+			return 1 - (self.xm / x)**self.alpha
+
+class HighTail_Dist(Dist):
+	def __init__(self, mean=None, var=None):
+		self.m = DEFAULT_PHASE_1_MEAN.generate_val() if mean==None else mean
+		self.dist = HighTail_RandVar(self.m)
+		super().__init__()
+
+	def generate_val(self):
+		return self.dist.rvs()
+
+	def adjusted(self, c):
+		std_est = self.dist.std()
+		return self.est - c * std_est
+
+	def mean(self):
+		return self.dist.mean()
+
+	def variance(self):
+		return self.dist.var()
 
 def proposed_hypothetical(c=0.3, lm=0.5, abv_means=[0,1], abv_stds=None):
 	if not abv_stds:
@@ -156,7 +186,9 @@ def dr_dc(offers):
 	return pairs
 
 k = Gamma_Dist(var=3)
-print(k.mean(), k.variance(), k.k, k.theta)
+v = HighTail_Dist()
+print(v.mean(), v.variance())
+#print(k.mean(), k.variance(), k.k, k.theta)
 
 #print(dr_dc([0,1]))
 
