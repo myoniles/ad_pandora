@@ -124,10 +124,13 @@ class HighTail_RandVar(stats.rv_continuous):
 class HighTail_Dist(Dist):
 	def __init__(self, stage_1_mean, stage_1_std, mean=None, var=None):
 		self.m = stage_1_mean.generate_val()+0.1 if mean==None else mean
-		self.alpha = 2 + stage_1_std.generate_val()
-		self.xm = (self.alpha* self.m - self.m)/self.alpha
-		#self.var = #(self.m**2)/ (self.alpha *(self.alpha -2))
-		self.var = (self.alpha * self.m**2)/ ((self.alpha-1)**2 *(self.alpha -2))
+		self.var = stage_1_std.generate_val()**2
+
+		#self.alpha = 2 + stage_1_std.generate_val()
+		self.alpha = math.sqrt((self.m**2+self.var)/self.var)+1
+		assert(self.alpha>2)
+		#self.xm = self.m * math.sqrt((m**2+self.var)/self.var) / (math.sqrt((m**2+self.var)/self.var)+1)
+		self.xm = self.m * (self.alpha-1) /self.alpha
 		super().__init__()
 
 	def generate_val(self):
@@ -186,7 +189,6 @@ def est_p(c=0):
 	return acc/denom
 
 #est_p()
-
 
 def dr_dc(offers):
 	pairs = [(a, b) for idx, a in enumerate(means) for b in means[idx + 1:]]

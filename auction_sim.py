@@ -8,9 +8,9 @@ import dist
 import random
 from tqdm import tqdm
 
-FID = 100
+FID = 1000
 stage_1_m = dist.Normal_Dist(None, None,  loc=10, std=2)
-stage_1_v = dist.Uniform_Dist(None, None, ab_pair=(50,100))
+stage_1_v = dist.Uniform_Dist(None, None, ab_pair=(0,3))
 
 def test_metrics(offers, metrics, c_min=0, c_max=3, c_fid=4000):
 	for m in metrics:
@@ -41,4 +41,4 @@ if __name__ == '__main__':
 			for a in tqdm(auc, desc="{} offer auctions".format(i)):
 				test_metrics(a, metrics, c_fid=FID)
 		for m in metrics:
-			m.graph(fname='images/updated_{}_{}.png'.format(trial, m.name), show=False, save=True)
+			m.graph(fname='images/lowvar_{}_{}.png'.format(trial, m.name), show=False, save=True)
