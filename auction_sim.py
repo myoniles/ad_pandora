@@ -8,7 +8,9 @@ import dist
 import random
 from tqdm import tqdm
 
-FID = 1000
+FID = 100
+stage_1_m = dist.Normal_Dist(None, None,  loc=10, std=2)
+stage_1_v = dist.Uniform_Dist(None, None, ab_pair=(50,100))
 
 def test_metrics(offers, metrics, c_min=0, c_max=3, c_fid=4000):
 	for m in metrics:
@@ -16,13 +18,12 @@ def test_metrics(offers, metrics, c_min=0, c_max=3, c_fid=4000):
 			m.test(offers, c, c_in=c_in)
 
 def generate_auctions(num_offers, num_auctions, choices=[dist.Normal_Dist]):
-	choices = [dist.Gamma_Dist, dist.Normal_Dist, dist.Uniform_Dist]
-	return [[random.choice(choices)() for o in range(num_offers)] for a in range(num_auctions)]
+	return [[random.choice(choices)(stage_1_m, stage_1_v) for o in range(num_offers)] for a in range(num_auctions)]
 
 if __name__ == '__main__':
 	metrics = [
-						#	metric.Dist_Selectivity_GivenTie(FID),
-						#	metric.Dist_Selectivity_GivenTie_AllTies(FID),
+							metric.Dist_Selectivity_GivenTie(FID),
+							metric.Dist_Selectivity_GivenTie_AllTies(FID),
 							metric.Dist_Selectivity(FID),
 							metric.Dist_Revenue_Impact(FID)
 						]
@@ -31,9 +32,6 @@ if __name__ == '__main__':
 						'uniform':[dist.Uniform_Dist],
 						'gamma':  [dist.Gamma_Dist],
 						'hightail':[dist.HighTail_Dist],
-						#'gn':     [dist.Normal_Dist, dist.Gamma_Dist],
-						#'gu':     [dist.Gamma_Dist, dist.Uniform_Dist],
-						#'nu':     [dist.Normal_Dist, dist.Uniform_Dist],
 						'all':    [dist.Normal_Dist, dist.Uniform_Dist, dist.Gamma_Dist, dist.HighTail_Dist]
 					}
 
@@ -43,4 +41,4 @@ if __name__ == '__main__':
 			for a in tqdm(auc, desc="{} offer auctions".format(i)):
 				test_metrics(a, metrics, c_fid=FID)
 		for m in metrics:
-			m.graph(fname='images/{}_{}.png'.format(trial, m.name), show=False, save=True)
+			m.graph(fname='images/updated_{}_{}.png'.format(trial, m.name), show=False, save=True)

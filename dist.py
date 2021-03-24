@@ -32,9 +32,20 @@ class Dist:
 		pass
 
 class Normal_Dist(Dist):
-	def __init__(self, loc=None, std=None):
-		self.loc = random.randint(7, 10) if loc == None else loc
-		self.std = random.uniform(0, 3) if std == None else std
+	def __init__(self, stage_1_mean, stage_1_std, loc=None, std=None):
+		if loc:
+			self.loc = loc
+		elif stage_1_mean:
+			self.loc = stage_1_mean.generate_val()
+		else:
+			self.loc = random.randint(7, 10)
+
+		if std:
+			self.std = std
+		elif stage_1_std:
+			self.std = stage_1_std.generate_val()
+		else:
+			self.std = random.uniform(0, 3)
 		super().__init__()
 
 	def generate_val(self):
@@ -50,44 +61,40 @@ class Normal_Dist(Dist):
 		return self.std**2
 
 class Uniform_Dist(Dist):
-	def __init__(self, ab_pair=None, mean=None):
+	def __init__(self, stage_1_mean, stage_1_std, ab_pair=None, mean=None, min_a=0, max_a=10):
 		if ab_pair ==None:
-			if mean == None:
-				self.a = random.uniform(UNIFORM_MIN_A,UNIFORM_MAX_A)
-				self.b = random.uniform(self.a, 2*UNIFORM_MAX_A)
-				self.m= 0.5 * (self.a + self.b)
-			else:
-				self.m= mean
-				self.a = random.uniform(UNIFORM_MIN_A,UNIFORM_MAX_A)
-				self.b = 2*mean - self.a
-			self.var = ((self.b - self.a)**2)/12.0
+			self.m = stage_1_mean.generate_val() if stage_1_mean else mean
+			self.std = stage_1_std.generate_val()
+			self.a = self.m - math.sqrt(3)*self.std
+			self.b = self.m + math.sqrt(3)*self.std
 		else:
 			self.a, self.b = ab_pair
 			self.m= 0.5 * (self.a + self.b)
-			self.var = ((self.b - self.a)**2)/12.0
+			self.std = math.sqrt(((self.b - self.a)**2)/12.0)
 		super().__init__()
 
 	def generate_val(self):
 		return np.random.uniform(self.a, self.b)
 
 	def adjusted(self, c):
-		return self.est - c * math.sqrt(self.var)
+		return self.est - c * self.std
 
 	def mean(self):
 		return self.m
 
 	def variance(self):
-		return self.var
+		return self.std**2
 
-DEFAULT_PHASE_1_MEAN = Normal_Dist(loc=10, std=2)
-DEFAULT_PHASE_1_STD = Uniform_Dist(ab_pair=(0,3))
+DEFAULT_PHASE_1_MEAN = Normal_Dist(None, None, loc=10, std=2)
+DEFAULT_PHASE_1_STD = Uniform_Dist(None, None, ab_pair=(0,3))
 
 class Gamma_Dist(Dist):
-	def __init__(self, mean=None, var=None):
-		self.m = DEFAULT_PHASE_1_MEAN.generate_val() if mean==None else mean
-		self.var = DEFAULT_PHASE_1_STD.generate_val() if var==None else var
-		self.k = random.uniform(0,10)
-		self.theta = (self.m + self.var)/(self.m+self.k)
+	def __init__(self,  stage_1_mean, stage_1_std, mean=None, var=None):
+		self.m = 0.1 + stage_1_mean.generate_val() if mean==None else mean
+		self.var = 0.001 + stage_1_std.generate_val()**2 if var==None else var
+		self.k = self.m**2 / self.var
+		#self.theta = (self.m + self.var)/(self.m+self.k)
+		self.theta = self.var / self.m
 		super().__init__()
 
 	def generate_val(self):
@@ -104,34 +111,38 @@ class Gamma_Dist(Dist):
 		return self.k * self.theta**2
 
 class HighTail_RandVar(stats.rv_continuous):
-	def __init__(self, xm, alpha=5, xtol=1e-14, seed=None):
+	def __init__(self, xm, alpha=5, xtol=1e-14, seed=None, stage_1_std=DEFAULT_PHASE_1_STD):
 			self.xm = xm
 			# If we want to keep variance 9 or below, we have to keep it greater than 3.18
 			# I find this delightful since it is so close to pi
-			self.alpha = 7.2 + DEFAULT_PHASE_1_STD.generate_val()
+			self.alpha = 7.2 + stage_1_std.generate_val()
 			super().__init__(a=0, xtol=xtol, seed=seed)
 
 	def _cdf(self, x):
 			return 1 - (self.xm / x)**self.alpha
 
 class HighTail_Dist(Dist):
-	def __init__(self, mean=None, var=None):
-		self.m = DEFAULT_PHASE_1_MEAN.generate_val() if mean==None else mean
-		self.dist = HighTail_RandVar(self.m)
+	def __init__(self, stage_1_mean, stage_1_std, mean=None, var=None):
+		self.m = stage_1_mean.generate_val()+0.1 if mean==None else mean
+		self.alpha = 2 + stage_1_std.generate_val()
+		self.xm = (self.alpha* self.m - self.m)/self.alpha
+		#self.var = #(self.m**2)/ (self.alpha *(self.alpha -2))
+		self.var = (self.alpha * self.m**2)/ ((self.alpha-1)**2 *(self.alpha -2))
 		super().__init__()
 
 	def generate_val(self):
-		return self.dist.rvs()
+		d = (1+np.random.pareto(self.alpha)) * self.xm
+		return d
 
 	def adjusted(self, c):
-		std_est = self.dist.std()
+		std_est = math.sqrt(self.var)
 		return self.est - c * std_est
 
 	def mean(self):
-		return self.dist.mean()
+		return self.m
 
 	def variance(self):
-		return self.dist.var()
+		return self.var
 
 def proposed_hypothetical(c=0.3, lm=0.5, abv_means=[0,1], abv_stds=None):
 	if not abv_stds:
@@ -176,7 +187,6 @@ def est_p(c=0):
 
 #est_p()
 
-print('\n')
 
 def dr_dc(offers):
 	pairs = [(a, b) for idx, a in enumerate(means) for b in means[idx + 1:]]
@@ -185,16 +195,3 @@ def dr_dc(offers):
 		acc +=0
 	return pairs
 
-k = Gamma_Dist(var=3)
-v = HighTail_Dist()
-print(v.mean(), v.variance())
-#print(k.mean(), k.variance(), k.k, k.theta)
-
-#print(dr_dc([0,1]))
-
-#print(acc / denom)
-
-# Runnign this for simply 2 does nto work
-# gives a 50% chance
-
-# Running this with three yields about 0.7

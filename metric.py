@@ -23,8 +23,6 @@ class Metric(metaclass=abc.ABCMeta):
 		if self.fidelity_gran == None:
 			self.df /= self.fidelity
 		else:
-			print(self.df)
-			print(pd.DataFrame(self.fidelity_gran))
 			self.df = self.df.div(pd.DataFrame(self.fidelity_gran))
 		x_axis = np.linspace(0, 3, self.fidelity)
 		for col in self.df:
@@ -107,8 +105,6 @@ class Dist_Selectivity(Metric):
 
 		est_c0 = max(offers, key=lambda x: x.est)
 		est_cc = max(offers, key=lambda x: x.adjusted(c))
-		#print(est_c0.adjusted(c), est_cc.adjusted(c))
-		#print(est_c0.std, est_cc.std)
 		measure = int(est_c0.mean() < est_cc.mean())
 
 		if update:
@@ -164,8 +160,8 @@ class Dist_Selectivity_GivenTie(Metric):
 				near_ties.append(o)
 
 		measure = 0
-		self.fidelity_gran[len(offers)][c_in] += len(near_ties)
 		if len(near_ties) > 0:
+			self.fidelity_gran[len(offers)][c_in] += 1
 			lower_std = max(near_ties, key=lambda x: x.adjusted(c))
 			if lower_std.variance() < highest_xi.variance() and lower_std.mean() > highest_xi.mean():
 				measure += 1
