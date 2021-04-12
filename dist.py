@@ -40,7 +40,7 @@ class Normal_Dist(Dist):
 class Uniform_Dist(Dist):
 	def __init__(self, stage_1_mean, stage_1_std, ab_pair=None, mean=None, min_a=0, max_a=10):
 		if ab_pair ==None:
-			m = stage_1_mean.generate_val() if stage_1_mean else mean
+			m = max(0, stage_1_mean.generate_val()) if stage_1_mean else mean
 			std = stage_1_std.generate_val()
 			self.a = m - math.sqrt(3)*std
 			self.b = m + math.sqrt(3)*std
@@ -59,7 +59,7 @@ DEFAULT_PHASE_1_STD = Uniform_Dist(None, None, ab_pair=(0,3))
 
 class Gamma_Dist(Dist):
 	def __init__(self,  stage_1_mean, stage_1_std, mean=None, var=None):
-		m = 0.1 + stage_1_mean.generate_val() if mean==None else mean
+		m = 0.1 + max(0, stage_1_mean.generate_val()) if mean==None else mean
 		std = 0.001 + stage_1_std.generate_val()
 		var = std**2 if var==None else var
 
@@ -83,7 +83,7 @@ class HighTail_RandVar(stats.rv_continuous):
 
 class HighTail_Dist(Dist):
 	def __init__(self, stage_1_mean, stage_1_std, mean=None, var=None):
-		m = stage_1_mean.generate_val()+0.1 if mean==None else mean
+		m = max(0.1, stage_1_mean.generate_val()+0.1) if mean==None else mean # It is assumed that m > 0, else var is infinity
 		std = stage_1_std.generate_val()
 		var = std**2
 
