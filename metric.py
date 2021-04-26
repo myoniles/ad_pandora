@@ -28,7 +28,7 @@ class Metric(metaclass=abc.ABCMeta):
 		x_axis = np.linspace(0, 3, self.fidelity)
 		for col in self.df:
 			plt.plot(x_axis,self.df[col], label=col)
-		plt.legend(loc=1, ncol=2)
+		plt.legend(loc=4, ncol=1)
 		plt.xlabel("Penalty Coefficient-c")
 		if self.ax_thresh:
 			plt.axhline(self.ax_thresh, c='r', ls=':')
@@ -43,6 +43,15 @@ class Metric(metaclass=abc.ABCMeta):
 		self.fidelity_gran = None
 		self.acc = {}
 		self.df = pd.DataFrame()
+
+	def get_max_points(self, linspace):
+		# return a point (n, c)
+		# This point corresponds to the c value when the metric was maximized for a given n
+		points = []
+		for n in self.acc:
+			c = linspace[self.acc[n].argmax()]
+			points.append((n,c))
+		return points
 
 class Offer_Revenue_Impact(Metric):
 	def __init__(self, fidelity):
@@ -125,25 +134,67 @@ class Dist_Revenue_Performance(Metric):
 from scipy.stats import norm, t
 import scipy.integrate as intg
 
-class Dist_Revenue_Performance_strat2(Metric):
-	def __init__(self, fidelity):
-		self.best_est = None
+class Dist_Selectivity_strat2(Metric):
+	def __init__(self, fidelity, m_loc=0, m_scale=1):
+		self.m_loc = m_loc
+		self.m_std = m_scale
 		super().__init__('Distribution Revenue Performance', fidelity)
 
 	def test(self, offers, c, update=True, c_in=0):
 		if len(offers) not in self.acc: # first with n offers
 			self.acc[len(offers)] = np.zeros(self.fidelity)
 
-		def func(x, n):
-			return x/(math.sqrt(math.pi)) * (math.e**(x**2 / -2) * 2**(1/2 - n) * n *(math.erf(x/math.sqrt(2))+ 1)**(n-1))
-		if self.best_est == None:
-			self.best_est = 10 + 2 * intg.quad(func, -1 * np.inf, np.inf, args=(len(offers)))[0]
+		mu_0 = util.get_expected_normal_max(len(offers), loc=self.m_loc, scale=self.m_std)
+		# Get best as determined by s2
+		def helper(x):
+			t1 = norm.cdf(mu_0+c*x.est, loc=mu_0, scale=math.sqrt(x.variance()))
+			t2 = norm.cdf(mu_0-c*x.est, loc=mu_0, scale=math.sqrt(x.variance()))
+			#x.est * norm.cdf(12, loc=10, scale=2) - norm.cdf(mu_0-c*x.est, loc=mu_0, scale=math.sqrt(x.variance()))
+			return x.est * (t1 - t2)
+		s2 = max(offers, key=helper )
+
+		# r star is maximal expected revenue, that is to asy with clairvoyance
+		# expected revenue in this case is just the largest mean
+		high_est = max(offers, key=lambda x: x.est)
+		# expected revenue r is the mean of the dist using the value c
+		#r= max(offers, key=lambda x: t.sf((abs(x.m-self.best_est)/x.std), df=2))
+		#r= b.mean()
+		#print(norm.cdf((r.m-self.best_est)/r.std))
+		measure = s2.mean() > high_est.mean() # (r_star.mean() - r.mean()) / r_star.mean()
+
+		if update:
+			self.acc[len(offers)][c_in] += measure
+		return measure
+class Dist_Revenue_Performance_strat2(Metric):
+	def __init__(self, fidelity, m_loc=0, m_scale=1):
+		self.m_loc = m_loc
+		self.m_std = m_scale
+		super().__init__('Distribution Revenue Performance', fidelity)
+
+	def test(self, offers, c, update=True, c_in=0):
+		if len(offers) not in self.acc: # first with n offers
+			self.acc[len(offers)] = np.zeros(self.fidelity)
+
+		mu_0 = util.get_expected_normal_max(len(offers), loc=self.m_loc, scale=self.m_std)
+		# Get best as determined by s2
+		def helper(x):
+			t1 = norm.cdf(mu_0+c*x.est, loc=mu_0, scale=math.sqrt(x.variance()))
+			t2 = norm.cdf(mu_0-c*x.est, loc=mu_0, scale=math.sqrt(x.variance()))
+			#x.est * norm.cdf(12, loc=10, scale=2) - norm.cdf(mu_0-c*x.est, loc=mu_0, scale=math.sqrt(x.variance()))
+			#if(c< 0.3):
+				#print(round(c,3),  round(t1 -t2, 3), round(x.est*(t1-t2), 3), end='\r')
+			return x.est * (t1 - t2)
+		r = max(offers, key=helper )
+		if c <= 0.03:
+			r = max(offers, key=lambda x: x.est)
+
 		# r star is maximal expected revenue, that is to asy with clairvoyance
 		# expected revenue in this case is just the largest mean
 		r_star = max(offers, key=lambda x: x.mean())
 		# expected revenue r is the mean of the dist using the value c
-		r= max(offers, key=lambda x: t.sf((abs(x.m-self.best_est)/x.std), df=2))
-		print(norm.cdf((r.m-self.best_est)/r.std))
+		#r= max(offers, key=lambda x: t.sf((abs(x.m-self.best_est)/x.std), df=2))
+		#r= b.mean()
+		#print(norm.cdf((r.m-self.best_est)/r.std))
 		measure = r.mean() / r_star.mean() # (r_star.mean() - r.mean()) / r_star.mean()
 
 		if update:
@@ -227,3 +278,29 @@ class Dist_Selectivity_GivenTie(Metric):
 		if update:
 			self.acc[len(offers)][c_in] += measure
 		return measure
+
+class Dist_MeanDiff(Metric):
+	def __init__(self, fidelity):
+		super().__init__('Distribution Selectivity', fidelity)
+
+	def test(self, offers, c, update=True, c_in=0):
+		if len(offers) not in self.acc: # first with n offers
+			self.acc[len(offers)] = np.zeros(self.fidelity)
+
+		#est_c0 = max(offers, key=lambda x: x.est)
+		highest_off = offers[0]
+		second_highest_off = offers[0]
+		for x in offers:
+			if x.est >= highest_off.est:
+				second_highest_off = highest_off
+				highest_off = x
+
+		measure = highest_off.mean() - second_highest_off.mean()
+
+		#offers.sort(key=lambda x:-1*x.est)
+		#measure = offers[0].mean() - offers[1].mean()
+
+		if update:
+			self.acc[len(offers)][c_in] += measure
+		return measure
+

@@ -1,0 +1,108 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+
+\title{Predicted Prices, near ties}
+\author{Michael Yoniles}
+\date{Spring 2021}
+\usepackage{hyperref}
+\usepackage{geometry}[margin=1in]
+\usepackage{xcolor}
+\usepackage{multicol}
+\usepackage{amsmath}
+
+\begin{document}
+
+\maketitle
+
+\begin{multicols}{2}
+\section{Abstract}
+\section{Motivation and related work}
+
+The motivation for the work has roots in two problems.
+The first is explored in Bax et al. which outlines an informal and formal proof
+
+\section{Formal environment}
+
+Let $D_{m0}$ and $D_{s0}$ describe the distribution of true means and $\sigma$'s respectively.
+
+\begin{enumerate}
+    \item Draw a random distribution $D_i$ from a fixed family of distributions, and parameterize it by $\mu_i$ (this is its mean) and a random number $\sigma_i$ drawn from $U[0,3]$ (this is its std).
+    \item For each $D_i$ draw $\mu_i$ from $D_{m0}$ and standard deviation from $D_{s0}$%normal with mean $10$ and std $2$
+    \item Draw a sample $v_i$ from $D_i$ to act as an estimate \begin{itemize}
+    \item Parameterize $D_i$ by $\mu_i$ (this is its mean) and $\sigma_i$ such that $\mathrm{Var}[D_i] = \sigma_i^2$.
+        \item Question/suggestion: What happens if $v_i < 0$? This can come up earlier as well (what happens when $\mu_i < 0$?). {\color{red}$\mu_i$ is truncated at 0 or slightly above depending on the distribution}
+        \end{itemize}
+    \item Performance of clairvoyant is $\max_i v_i$. Performance of algorithm $ALG_c$ is the $\mu_i$ of the box $i$ chosen by $ALG_c$. E.g. $ALG_c$ has performance whatever is in the box $\arg_i\max \mu_i - c \cdot \sigma_i$.
+\end{enumerate}
+
+Unless otherwise specified for the pursposes of this paper, assume that $D_{m0} \sim N(10,2)$ and $D_{s0} \sim U(0,3)$.
+This was chosen to be closely comparable to the findings of Bax, however other distributions are explored, especially for $D_{s0}$.
+
+In first price auctions the expected revenue of $ALG_c$ is a function of $c$ described by $r(c) = E[\mu_{\arg_i\max(X_i-c\sigma_i)}(X_i \dots X_n)]$.
+Just as in Bax, assume $n>3$ and that $\sigma_i \ne sigma_j$ for all pairs of $i$ and $j$.
+Work in Bax assumes that all $\sigma_1 \dots \sigma_n$ are known and not randomly distributed however because this paper explores the more general case, as described above all $\sigma_i$'s are chosen from $D_{s0}$.
+
+Let $E_{ij}$ be the event that $ALG_c$ promotes $j$ over $i$ for any $i,j$ pair.
+In the general case then the probability of $E_{ij}$ for a given c value is:
+$$
+\begin{aligned}
+P(X_i - c \sigma_i < X_j - c \sigma_j)\\
+= P(X_i < X_j + c( \sigma_i-  \sigma_j))\\
+= P(X_i - X_j < c( \sigma_i-  \sigma_j))\\
+%= P(\frac{X_i - X_j}{\sigma_i-  \sigma_j} <  c)
+\end{aligned}
+$$
+
+%Note that for $X_j$ to be promoted over $X_i$, $\sigma_i > \sigma_j$ since $X_i > X_j$.
+Note that this distribution as written does not contain assumptions about $X_i$ or $X_j$; just becuase $X_j$ may be promoted over $X_i$, it may still be the case that $X_j > X_i$.
+For our calculations however, it would be better if we could treat this as a unified distribution.
+Therefore we need to consider three cases.
+Either $\sigma_i = \sigma_j$ or one greater than antoher.
+
+In the case $\sigma_i = \sigma_j$: $$P(E_{ij}) = P(X_i - X_j < 0)$$
+If $\sigma_i > \sigma_j$: $$P(E_{ij}) = P(\frac{X_i - X_j}{\sigma_i-  \sigma_j} <  c)$$
+If $\sigma_j > \sigma_i$:
+$$
+\begin{aligned}
+P(E_{ij}) =& P(\frac{X_i - X_j}{\sigma_i-  \sigma_j} >  c)\\
+=& 1 - P(\frac{X_i - X_j}{\sigma_i-  \sigma_j} <  c)
+\end{aligned}
+$$
+
+These equations hide a lot of complexity but can be treated a random variable dsitributed over a compound probability distribution, since $X_i$ and $X_j$ are parametarized by $\sigma_i$ and $\sigma_j$ which are themselves random variables.
+We will call this distribution $C(c)$ for now but will expand in this section.
+
+With this, we rewrite $r(c)$ in the context of the three cases:
+$$
+\begin{aligned}
+r(c)=& E[\mu_{\arg_i\max X_i - c \sigma_i}(X_1 \dots X_n)]\\
+= &\sum_{i,j: \sigma_i > \sigma_j}C(c)\mu_j + (1-C(c))\mu_i\\ % TODO Include :X_i > X_j, \sigma_i > \sigma_j in sum clause?
+& +\sum_{i,j: \sigma_i = \sigma_j}P(X_i < X_j)\mu_j + P(X_i > X_j)\mu_i\\
+& +\sum_{i,j: \sigma_j > \sigma_i}(1-C(c))\mu_j + C(c)\mu_i\\ % TODO Include :X_i > X_j, \sigma_i > \sigma_j in sum clause?
+= & 2 \sum_{i,j: \sigma_i > \sigma_j}C(c)(\mu_j - \mu_i) + \mu_i\\ % TODO Include :X_i > X_j, \sigma_i > \sigma_j in sum clause?
+& +\sum_{i,j: \sigma_i = \sigma_j}P(X_i < X_j)(\mu_j - \mu_i) +\mu_i\\
+\end{aligned}
+$$
+
+This finding should not be unexpected, it is the sum of tradeoffs multiplied by the probabilty of that tradeoff taking place.
+Moreover, it conforms to the notion that if
+
+
+%We want to show $\frac{\delta r(c)}{\delta c}|_{c=0} > 0$.
+%
+%$$\frac{\delta r(c)}{\delta c}|_{c=0} = \lim_{c\to 0} \frac{1}{c} [r(c) - r(0)]$$
+
+\section{Exploration of Diverse Family of Distributions}
+
+\section{Relationship between $c$ and $n$}
+
+\section{Application and results}
+
+\section{Future Work}
+
+\section{Conclusion}
+
+\end{multicols}
+\end{document}

@@ -1,5 +1,7 @@
 import random
 import numpy as np
+import scipy.integrate as intg
+import math
 
 def second_price( products ):
 	# finds the winning selection for a second price auction based on the product of bid and estimated respsonse rate
@@ -34,3 +36,15 @@ def revenue_impact(est_rates, act_rates, bids):
 def offers_split(offers, c):
 	l = [(o.bid, o.act_rate, o.adjusted_probability_estimate(c)) for o in offers]
 	return map(list, zip(*l))
+
+def _norm_max_helper(x, n):
+	return x/(math.sqrt(math.pi)) * (math.e**(x**2 / -2) * 2**(1/2 - n) * n *(math.erf(x/math.sqrt(2))+ 1)**(n-1))
+
+max_exp_dict = {}
+
+def get_expected_normal_max(n, loc=0, scale=1):
+	if n in max_exp_dict:
+		return loc + scale * max_exp_dict[n]
+	else:
+		max_exp_dict[n] = intg.quad(_norm_max_helper, -1 * np.inf, np.inf, args=(n))[0]
+		return loc + scale * max_exp_dict[n]
