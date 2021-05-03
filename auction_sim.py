@@ -8,13 +8,13 @@ import dist
 import random
 from tqdm import tqdm
 
-FID = 100
-M_LOC = 10
-M_STD = 2
+FID = 1000
+M_LOC = 100
+M_STD = 2.25
 stage_1_m = dist.Normal_Dist(None, None,  loc=M_LOC, std=M_STD)
 stage_1_v = dist.Uniform_Dist(None, None, ab_pair=(0,3))
 
-def test_metrics(offers, metrics, c_min=0, c_max=4, c_fid=1000):
+def test_metrics(offers, metrics, c_min=0, c_max=3, c_fid=1000):
 	for m in metrics:
 		for c_in, c in enumerate(np.linspace(c_min, c_max, c_fid)):
 			m.test(offers, c, c_in=c_in)
@@ -28,9 +28,9 @@ if __name__ == '__main__':
 							#metric.Dist_Selectivity_GivenTie_AllTies(FID),
 							#metric.Dist_Selectivity(FID),
 							#	metric.Dist_Revenue_Impact(FID),
-							#metric.Dist_Revenue_Performance(FID),
+							metric.Dist_Revenue_Performance(FID),
 							#metric.Dist_MeanDiff(FID),
-							metric.Dist_Revenue_Performance_strat2(FID, m_loc=M_LOC, m_scale=M_STD)
+							#metric.Dist_Revenue_Performance_strat2(FID, m_loc=M_LOC, m_scale=M_STD)
 							#metric.Dist_Selectivity_strat2(FID, m_loc=M_LOC, m_scale=M_STD)
 						]
 	trials = {
@@ -44,10 +44,10 @@ if __name__ == '__main__':
 	for trial in trials:
 		for m in metrics:
 			m.refresh()
-		for i in [4, 16, 40]:#,8,12,16]:# 100, 250, 500,1000, 5000, 10000]:
+		for i in [4,8,12, 16,20, 24, 28, 32, 36, 40]:#,8,12,16]:# 100, 250, 500,1000, 5000, 10000]:
 			auc = generate_auctions(i, FID, choices=trials[trial])
 			for a in tqdm(auc, desc="{} offer auctions".format(i)):
 			#for a in auc:
 				test_metrics(a, metrics, c_fid=FID)
 		for m in metrics:
-			m.graph(fname='images/3auc_{}_{}.png'.format(trial, m.name), show=True, save=False)
+			m.graph(fname='images/highvar_last_{}_{}.png'.format(trial, m.name), show=True, save=False)

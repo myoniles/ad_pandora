@@ -19,16 +19,16 @@ class Metric(metaclass=abc.ABCMeta):
 	def test(self, offers, c, update=True, c_in=0):
 		pass
 
-	def graph(self, fname='plot', show=True, save=False):
+	def graph(self, fname='plot', show=True, save=False, linspace_bounds=[0,3]):
 		self.df = pd.DataFrame(self.acc)
 		if self.fidelity_gran == None:
 			self.df /= self.fidelity
 		else:
 			self.df = self.df.div(pd.DataFrame(self.fidelity_gran))
-		x_axis = np.linspace(0, 3, self.fidelity)
+		x_axis = np.linspace(linspace_bound[0], linspace_bound[1], self.fidelity)
 		for col in self.df:
 			plt.plot(x_axis,self.df[col], label=col)
-		plt.legend(loc=4, ncol=1)
+		plt.legend(loc=1, ncol=1)
 		plt.xlabel("Penalty Coefficient-c")
 		if self.ax_thresh:
 			plt.axhline(self.ax_thresh, c='r', ls=':')
@@ -209,9 +209,11 @@ class Dist_Selectivity(Metric):
 		if len(offers) not in self.acc: # first with n offers
 			self.acc[len(offers)] = np.zeros(self.fidelity)
 
-		est_c0 = max(offers, key=lambda x: x.est)
 		est_cc = max(offers, key=lambda x: x.adjusted(c))
-		measure = int(est_c0.mean() < est_cc.mean())
+		o = util.get_expected_normal_max(len(offers), loc=10, scale=2)
+		o_in = max(offers, key=lambda x: x.mean())
+		o = min(o, o_in.mean())
+		measure = int(est_cc.mean() >= o)
 
 		if update:
 			self.acc[len(offers)][c_in] += measure
@@ -281,7 +283,7 @@ class Dist_Selectivity_GivenTie(Metric):
 
 class Dist_MeanDiff(Metric):
 	def __init__(self, fidelity):
-		super().__init__('Distribution Selectivity', fidelity)
+		super().__init__('Difference in Rewards', fidelity)
 
 	def test(self, offers, c, update=True, c_in=0):
 		if len(offers) not in self.acc: # first with n offers

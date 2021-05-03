@@ -10,10 +10,10 @@ from scipy.optimize import curve_fit
 import pickle
 
 
-FID = 1000
-LINSPACE = np.linspace(1,6, FID)
-stage_1_m = dist.Normal_Dist(None, None,  loc=10, std=2)
-stage_1_v = dist.Uniform_Dist(None, None, ab_pair=(0,1))
+FID = 100
+LINSPACE = np.linspace(0,10, FID)
+stage_1_m = dist.Normal_Dist(None, None,  loc=100, std=10)
+stage_1_v = dist.Uniform_Dist(None, None, ab_pair=(0,3))
 
 def get_c_points(offers, m):
 	for c_in, c in enumerate(LINSPACE):
@@ -30,20 +30,24 @@ if __name__ == '__main__':
 	trials = {
 						'normal': [dist.Normal_Dist],
 						#'uniform':[dist.Uniform_Dist],
-						#'gamma':  [dist.Gamma_Dist],
-						#'hightail':[dist.HighTail_Dist],
+						'gamma':  [dist.Gamma_Dist],
+						'hightail':[dist.HighTail_Dist],
 						#'all':    [dist.Normal_Dist, dist.Uniform_Dist, dist.Gamma_Dist, dist.HighTail_Dist]
 					}
 	m = metric.Dist_Revenue_Performance(FID)
 
 	for trial in trials:
-		for i in range(10,1011,50):
+		for i in range(10,1511,100):
 			auc = generate_auctions(i, FID, choices=trials[trial])
 			for a in tqdm(auc, desc="{} offer auctions".format(i)):
 				get_c_points(a, m)
 		print(m.get_max_points(LINSPACE))
 		p = m.get_max_points(LINSPACE)
 		x, y = zip(*p)
+		'''
+		with open('saved_df_low_var.pickle', 'wb') as fille:
+			pickle.dump(m.acc, fille, protocol=pickle.HIGHEST_PROTOCOL)
+		'''
 		popt, _ = curve_fit(objective, x, y)
 		print(popt, _)
 		a, b, c, d = popt

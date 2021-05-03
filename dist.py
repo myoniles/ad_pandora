@@ -70,17 +70,6 @@ class Gamma_Dist(Dist):
 	def generate_val(self):
 		return np.random.gamma(self.k, scale=self.theta)
 
-class HighTail_RandVar(stats.rv_continuous):
-	def __init__(self, xm, alpha=5, xtol=1e-14, seed=None, stage_1_std=DEFAULT_PHASE_1_STD):
-			self.xm = xm
-			# If we want to keep variance 9 or below, we have to keep it greater than 3.18
-			# I find this delightful since it is so close to pi
-			self.alpha = 7.2 + stage_1_std.generate_val()
-			super().__init__(a=0, xtol=xtol, seed=seed)
-
-	def _cdf(self, x):
-			return 1 - (self.xm / x)**self.alpha
-
 class HighTail_Dist(Dist):
 	def __init__(self, stage_1_mean, stage_1_std, mean=None, var=None):
 		m = max(0.1, stage_1_mean.generate_val()+0.1) if mean==None else mean # It is assumed that m > 0, else var is infinity

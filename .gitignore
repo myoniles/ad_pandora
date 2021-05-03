@@ -1,4 +1,6 @@
 __pycache__
 images/
 images/*
+precalc/
+precalc/*
 
