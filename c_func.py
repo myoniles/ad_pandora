@@ -41,20 +41,13 @@ if __name__ == '__main__':
 			auc = generate_auctions(i, FID, choices=trials[trial])
 			for a in tqdm(auc, desc="{} offer auctions".format(i)):
 				get_c_points(a, m)
-		print(m.get_max_points(LINSPACE))
 		p = m.get_max_points(LINSPACE)
 		x, y = zip(*p)
-		'''
-		with open('saved_df_low_var.pickle', 'wb') as fille:
-			pickle.dump(m.acc, fille, protocol=pickle.HIGHEST_PROTOCOL)
-		'''
 		popt, _ = curve_fit(objective, x, y)
 		print(popt, _)
 		a, b, c, d = popt
 		plt.scatter(x,y)
 		x_line = np.arange(min(x), max(x), 1)
 		y_line = objective(x_line, a, b, c, d )
-		#with open('saved_df_low_var.pickle', 'wb') as fille:
-		#	pickle.dump(m.acc, fille, protocol=pickle.HIGHEST_PROTOCOL)
 		plt.plot(x_line, y_line, '--')
 		plt.show()

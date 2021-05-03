@@ -5,9 +5,6 @@ import abc
 import math
 from scipy import stats
 
-UNIFORM_MIN_A = 0
-UNIFORM_MAX_A = 10
-
 class Dist:
 	def __init__(self, m, s):
 		self.m = m
@@ -53,9 +50,6 @@ class Uniform_Dist(Dist):
 	def generate_val(self):
 		return np.random.uniform(self.a, self.b)
 
-
-DEFAULT_PHASE_1_MEAN = Normal_Dist(None, None, loc=10, std=2)
-DEFAULT_PHASE_1_STD = Uniform_Dist(None, None, ab_pair=(0,3))
 
 class Gamma_Dist(Dist):
 	def __init__(self,  stage_1_mean, stage_1_std, mean=None, var=None):

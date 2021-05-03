@@ -25,7 +25,7 @@ class Metric(metaclass=abc.ABCMeta):
 			self.df /= self.fidelity
 		else:
 			self.df = self.df.div(pd.DataFrame(self.fidelity_gran))
-		x_axis = np.linspace(linspace_bound[0], linspace_bound[1], self.fidelity)
+		x_axis = np.linspace(linspace_bounds[0], linspace_bounds[1], self.fidelity)
 		for col in self.df:
 			plt.plot(x_axis,self.df[col], label=col)
 		plt.legend(loc=1, ncol=1)
@@ -219,7 +219,7 @@ class Dist_Selectivity(Metric):
 			self.acc[len(offers)][c_in] += measure
 		return measure
 
-class Dist_Selectivity_GivenTie_AllTies(Metric):
+class Dist_Favorability_GivenTie_AllTies(Metric):
 	def __init__(self, fidelity):
 		super().__init__('Selectivity given near tie, all ties', fidelity, ax_thresh = 0.5)
 
@@ -249,7 +249,7 @@ class Dist_Selectivity_GivenTie_AllTies(Metric):
 			self.acc[len(offers)][c_in] += measure
 		return measure
 
-class Dist_Selectivity_GivenTie(Metric):
+class Dist_Favorability_GivenTie(Metric):
 	def __init__(self, fidelity):
 		self.ax_thresh = 0.5
 		super().__init__('Favorable breaks given near tie', fidelity, ax_thresh = 0.5)

@@ -8,10 +8,9 @@ import dist
 import random
 from tqdm import tqdm
 
-FID = 1000
-M_LOC = 100
-M_STD = 2.25
-stage_1_m = dist.Normal_Dist(None, None,  loc=M_LOC, std=M_STD)
+FID = 100
+LINSPACE_BOUNDS = [0, 3]
+stage_1_m = dist.Normal_Dist(None, None,  loc=10, std=3)
 stage_1_v = dist.Uniform_Dist(None, None, ab_pair=(0,3))
 
 def test_metrics(offers, metrics, c_min=0, c_max=3, c_fid=1000):
@@ -24,8 +23,8 @@ def generate_auctions(num_offers, num_auctions, choices=[dist.Normal_Dist]):
 
 if __name__ == '__main__':
 	metrics = [
-							#metric.Dist_Selectivity_GivenTie(FID),
-							#metric.Dist_Selectivity_GivenTie_AllTies(FID),
+							#metric.Dist_Favorability_GivenTie(FID),
+							#metric.Dist_Favorability_GivenTie_AllTies(FID),
 							#metric.Dist_Selectivity(FID),
 							#	metric.Dist_Revenue_Impact(FID),
 							metric.Dist_Revenue_Performance(FID),
@@ -44,10 +43,10 @@ if __name__ == '__main__':
 	for trial in trials:
 		for m in metrics:
 			m.refresh()
-		for i in [4,8,12, 16,20, 24, 28, 32, 36, 40]:#,8,12,16]:# 100, 250, 500,1000, 5000, 10000]:
+		for i in [4,8,12, 16,20, 24, 28, 32, 36, 40]:
 			auc = generate_auctions(i, FID, choices=trials[trial])
 			for a in tqdm(auc, desc="{} offer auctions".format(i)):
 			#for a in auc:
-				test_metrics(a, metrics, c_fid=FID)
+				test_metrics(a, metrics, c_fid=FID, c_min=LINSPACE_BOUNDS[0], c_max=LINSPACE_BOUNDS[1])
 		for m in metrics:
-			m.graph(fname='images/highvar_last_{}_{}.png'.format(trial, m.name), show=True, save=False)
+			m.graph(fname='images/highvar_last_{}_{}.png'.format(trial, m.name), show=True, save=False, linspace_bounds=LINSPACE_BOUNDS)
